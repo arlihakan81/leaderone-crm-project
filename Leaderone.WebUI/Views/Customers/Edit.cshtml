@@ -1,0 +1,102 @@
+﻿@model CustomerDTO
+
+@{
+    ViewData["title"] = "Edit Customer";
+}
+
+<nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="#!">Page 1</a></li>
+        <li class="breadcrumb-item"><a href="#!">Page 2</a></li>
+        <li class="breadcrumb-item active">Default</li>
+    </ol>
+</nav>
+<div class="border-bottom border-translucent mb-7 mx-n3 px-3 mx-lg-n6 px-lg-6">
+    <div class="row">
+        <div class="col-xl-9">
+            <div class="d-sm-flex justify-content-between">
+                <h2 class="mb-4">Create a new lead</h2>
+                <div class="d-flex mb-3">
+                    <button class="btn btn-phoenix-primary me-2 px-6">Cancel</button>
+                    <button class="btn btn-primary">Edit lead</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xl-9">
+        <h4 class="mb-3">Customer Information </h4>
+        <form class="row g-3 mb-9" asp-action="Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-floating">
+                    <input asp-for="Name" class="form-control" id="floatingInputLastname" type="text" placeholder="Last name" />
+                    <label for="floatingInputLastname">Name</label>
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-floating">
+                    <input asp-for="Email" class="form-control" id="floatingInputEmail" type="text" placeholder="email" />
+                    <label for="floatingInputEmail">Email</label>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-floating">
+                    <input asp-for="Phone" class="form-control" id="floatingInputPhone" type="tel" placeholder="phone" />
+                    <label for="floatingInputPhone">Phone</label>
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-floating">
+                    <select asp-for="Status" class="form-select" id="floatingSelectStatus">
+                        @foreach(var status in Enum.GetValues(typeof(Enumeration.CustomerStatus)))
+                        {
+                            <option value="@status">@status.ToString()</option>                            
+                        }
+                    </select>
+                    <label for="floatingSelectStatus">Status </label>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+            </div>
+            <h4 class="mt-6">Address Information</h4>
+            <div class="col-sm-6 col-md-4">
+                <div class="form-floating">
+                    <select asp-for="City" class="form-select" id="floatingSelectCity">
+                        <option selected="selected"> Neo centrola</option>
+                        <option value="London">London</option>
+                        <option value="New York">New York </option>
+                    </select>
+                    <label for="floatingSelectCity">City</label>
+                    <span asp-validation-for="City" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="form-floating">
+                    <select asp-for="Country" class="form-select" id="floatingSelectCountry">
+                        <option selected="selected"> United Empire of Brekania</option>
+                        <option value="UK">UK</option>
+                        <option value="USA">USA</option>
+                        <option value="Turkey">Turkey</option>
+                    </select>
+                    <label for="floatingSelectCountry">Country</label>
+                    <span asp-validation-for="Country" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-floating">
+                    <textarea asp-for="Address" class="form-control" id="floatingProjectOverview" placeholder="Leave a comment here" style="height: 128px"></textarea>
+                    <label for="floatingProjectOverview">Address</label>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+            </div>
+            <input asp-for="TenantId" type="hidden" value="@User.FindFirst("TenantId")?.Value" />
+            <div class="col-12 d-flex justify-content-end mt-6">
+                <button class="btn btn-primary" type="submit">Create lead</button>
+            </div>
+        </form>
+    </div>
+</div>
