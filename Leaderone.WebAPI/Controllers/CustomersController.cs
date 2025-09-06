@@ -9,6 +9,7 @@ namespace Leaderone.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CustomersController(ICustomerRepository repository) : ControllerBase
     {
         private readonly ICustomerRepository repository = repository;

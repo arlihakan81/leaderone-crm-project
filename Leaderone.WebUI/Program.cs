@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddSession();
 builder.Services.AddScoped(t => new HttpClient { BaseAddress = new Uri("https://localhost:7085/api") });
 builder.Services.AddDbContext<LeaderoneDbContext>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
@@ -40,6 +40,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseSession();
 app.UseRouting();
 
 app.UseAuthentication();

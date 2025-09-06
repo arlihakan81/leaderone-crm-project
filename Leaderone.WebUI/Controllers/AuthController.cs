@@ -12,9 +12,10 @@ using System.Security.Claims;
 
 namespace Leaderone.WebUI.Controllers
 {
-    public class AuthController(IAppUserRepository repository) : Controller
+    public class AuthController(HttpClient apiClient, IAppUserRepository repository) : Controller
     {
         private readonly IAppUserRepository repository = repository;
+        private readonly HttpClient _apiClient = apiClient;
 
         [HttpGet]
         public IActionResult Login() => View();
@@ -42,6 +43,16 @@ namespace Leaderone.WebUI.Controllers
                 return View(request);
             }
 
+            var response = await _apiClient.PostAsJsonAsync<LoginRequest>($"{_apiClient.BaseAddress}/login", request);
+            response.EnsureSuccessStatusCode();
+            var token = await response.Content.ReadFromJsonAsync<string>();
+            HttpContext.Response.Cookies.Append("jwt_token", token!, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddHours(1) // Set expiration time as needed
+            });
             var claims = new List<Claim>
             {
                 new ("TenantId", user.TenantId.ToString()),
@@ -81,18 +92,19 @@ namespace Leaderone.WebUI.Controllers
                 return View();
             }
 
-            var tenant = new Tenant
+            var tenant = new Tenant();
+            using (var context = new LeaderoneDbContext())
             {
-                Name = request.Email.Split('@')[1],
-                Domain = request.Email.Split('@')[1]
+                var name = request.Email.Split('@')[1];
+                if (!context.Tenants.Any(t => t.Name == name))
+                {
+                    tenant.Name = name.Split('.')[0];
+                    tenant.Domain = request.Email.Split('@')[1];
+                    context.Tenants.Add(tenant);
+                    await context.SaveChangesAsync();
+                    tenant = context.Tenants.FirstOrDefault(t => t.Name == name);
+                }
             };
-
-            using (LeaderoneDbContext context = new())
-            {
-                context.Tenants.Add(tenant);
-                await context.SaveChangesAsync();
-                tenant = context.Tenants.FirstOrDefault(t => t.Name == tenant.Name);
-            }
 
             var user = new AppUser
             {

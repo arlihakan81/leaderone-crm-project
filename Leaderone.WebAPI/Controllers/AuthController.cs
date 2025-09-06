@@ -38,7 +38,7 @@ namespace Leaderone.WebAPI.Controllers
                 return Unauthorized("Invalid email or password.");
             }
 
-            return Ok(new { Token = GenerateJwtToken(user) });
+            return Ok(GenerateJwtToken(user));
 
         }
 
@@ -46,9 +46,11 @@ namespace Leaderone.WebAPI.Controllers
         {
             var claims = new[]
             {
+                new Claim("avatar", user.Avatar ?? string.Empty),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.RoleInTenant.ToString()),
                 new Claim("TenantId", user.TenantId.ToString())
             };
 
@@ -80,32 +82,37 @@ namespace Leaderone.WebAPI.Controllers
                 return Conflict("Email is already in use.");
             }
 
-             
+            var domain = request.Email.Split('@')[1];
             var tenant = new Tenant();
             using (var context = new LeaderoneDbContext())
             {
-                var name = request.Email.Split('@')[1];
-                if(!context.Tenants.Any(t => t.Name == name))
+                if(!context.Tenants.Any(t => t.Domain == domain))
                 {
-                    tenant.Name = name.Split('.')[0];
+                    tenant.Name = domain.Split('.')[0];
                     tenant.Domain = request.Email.Split('@')[1];
                     context.Tenants.Add(tenant);
                     await context.SaveChangesAsync();
                 }
+                tenant = context.Tenants.FirstOrDefault(t => t.Domain == domain);
+
+                var user = new AppUser
+                {
+                    Id = Guid.NewGuid(),
+                    Avatar = "avatar.webp",
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Email = request.Email,
+                    PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, request.Password),
+                    RoleInTenant = Domain.Enums.Enumeration.TenantRole.Admin,
+                    TenantId = tenant!.Id
+                };
+
+                if (await _appUserRepo.IsExistsAdminAsync(tenant.Id))
+                {
+                    user.RoleInTenant = Domain.Enums.Enumeration.TenantRole.Employee;
+                    await _appUserRepo.AddAsync(user);
+                }
             };
-
-            var user = new AppUser
-            {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                PasswordHash = new PasswordHasher<AppUser>().HashPassword(null!, request.Password),
-                TenantId = tenant.Id
-            };
-
-            user.PasswordHash = new PasswordHasher<AppUser>().HashPassword(user, request.Password);
-
-            await _appUserRepo.AddAsync(user);
 
             return Ok("Your register operation succeed");
         }
