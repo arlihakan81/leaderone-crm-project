@@ -3,15 +3,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Leaderone.WebUI.Controllers
 {
-    public class CustomersController(HttpClient apiClient) : Controller
+    public class CustomersController(IHttpClientFactory apiClient) : Controller
     {
-        private readonly HttpClient apiClient = apiClient;
+        private readonly IHttpClientFactory apiClient = apiClient;
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            var httpClient = apiClient.CreateClient("MyApiClient");
+
             var tenantId = User.FindFirst("TenantId")?.Value;
-            var customers = await apiClient.GetFromJsonAsync<List<CustomerDTO>>($"{apiClient.BaseAddress}/customers/tenants/{tenantId}");
+            var customers = await httpClient.GetFromJsonAsync<List<CustomerDTO>>($"{httpClient.BaseAddress}/customers/tenants/{tenantId}");
             return View(customers);
         }
 
@@ -21,9 +23,10 @@ namespace Leaderone.WebUI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CustomerDTO customerDTO)
         {
-            var response = await apiClient.PostAsJsonAsync<CustomerDTO>($"{apiClient.BaseAddress}/customers", customerDTO);
+            var httpClient = apiClient.CreateClient("MyApiClient");
+            var response = await httpClient.PostAsJsonAsync<CustomerDTO>($"{httpClient.BaseAddress}/customers", customerDTO);
 
-            if(response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
                 return RedirectToAction("Index");
 
             return View(customerDTO);
@@ -32,14 +35,16 @@ namespace Leaderone.WebUI.Controllers
         [HttpGet("Edit/{id:guid}")]
         public async Task<IActionResult> Edit(Guid id)
         {
-            var customer = await apiClient.GetFromJsonAsync<CustomerDTO>($"{apiClient.BaseAddress}/customers/{id}");
+            var httpClient = apiClient.CreateClient("MyApiClient");
+            var customer = await httpClient.GetFromJsonAsync<CustomerDTO>($"{httpClient.BaseAddress}/customers/{id}");
             return View(customer);
         }
 
         [HttpPost("Edit/{id:guid}")]
         public async Task<IActionResult> Edit(Guid id, CustomerDTO customerDTO)
         {
-            var response = await apiClient.PutAsJsonAsync<CustomerDTO>($"{apiClient.BaseAddress}/customers/{id}", customerDTO);
+            var httpClient = apiClient.CreateClient("MyApiClient");
+            var response = await httpClient.PutAsJsonAsync<CustomerDTO>($"{httpClient.BaseAddress}/customers/{id}", customerDTO);
 
             if (response.IsSuccessStatusCode)
                 return RedirectToAction("Index");
@@ -48,8 +53,14 @@ namespace Leaderone.WebUI.Controllers
 
         }
 
+        [HttpGet("Customers/{id:guid}/Details")]
+        public async Task<IActionResult> Detail(Guid id)
+        {
+            var httpClient = apiClient.CreateClient("MyApiClient");
+            var customer = await httpClient.GetFromJsonAsync<CustomerDTO>($"{httpClient.BaseAddress}/customers/{id}");
 
-
+            return View(customer);
+        }
 
 
 

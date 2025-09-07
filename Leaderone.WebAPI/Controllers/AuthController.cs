@@ -54,8 +54,7 @@ namespace Leaderone.WebAPI.Controllers
                 new Claim("TenantId", user.TenantId.ToString())
             };
 
-            var secretKey = _config["Jwt:SecretKey"];
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
@@ -107,10 +106,9 @@ namespace Leaderone.WebAPI.Controllers
                     TenantId = tenant!.Id
                 };
 
-                if (await _appUserRepo.IsExistsAdminAsync(tenant.Id))
-                {
-                    user.RoleInTenant = Domain.Enums.Enumeration.TenantRole.Employee;
-                    await _appUserRepo.AddAsync(user);
+                if(!await _appUserRepo.IsExistsAdminAsync(tenant.Id))
+                { 
+                    await _appUserRepo.AddAsync(user);                    
                 }
             };
 

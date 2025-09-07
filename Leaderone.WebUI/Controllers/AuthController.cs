@@ -8,14 +8,15 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 
 namespace Leaderone.WebUI.Controllers
 {
-    public class AuthController(HttpClient apiClient, IAppUserRepository repository) : Controller
+    public class AuthController(IHttpClientFactory httpClient, IAppUserRepository repository) : Controller
     {
         private readonly IAppUserRepository repository = repository;
-        private readonly HttpClient _apiClient = apiClient;
+        private readonly IHttpClientFactory _httpClient = httpClient;
 
         [HttpGet]
         public IActionResult Login() => View();
@@ -42,17 +43,37 @@ namespace Leaderone.WebUI.Controllers
                 ModelState.AddModelError(request.Password, "Invalid email or password.");
                 return View(request);
             }
-
-            var response = await _apiClient.PostAsJsonAsync<LoginRequest>($"{_apiClient.BaseAddress}/login", request);
-            response.EnsureSuccessStatusCode();
-            var token = await response.Content.ReadFromJsonAsync<string>();
-            HttpContext.Response.Cookies.Append("jwt_token", token!, new CookieOptions
+            var _apiClient = _httpClient.CreateClient("MyApiClient");
+            var response = await _apiClient.PostAsJsonAsync<LoginRequest>($"{_apiClient.BaseAddress}/auth/login", request);
+            // Check if the request was successful
+            if (response.IsSuccessStatusCode)
             {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTimeOffset.UtcNow.AddHours(1) // Set expiration time as needed
-            });
+                // Read the response as string first to see what's actually coming back
+                var responseString = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Raw response: {responseString}");
+
+                var token = responseString.Trim('"'); // Remove quotes if present
+
+                if (string.IsNullOrEmpty(token))
+                {
+                    // Handle null token case
+                    throw new Exception("Token is null or empty. Raw response: " + responseString);
+                }
+                _apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                HttpContext.Response.Cookies.Append("jwt_token", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTimeOffset.UtcNow.AddHours(1)
+                });
+            }
+            else
+            {
+                // Handle error response
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Login failed: {response.StatusCode} - {errorContent}");
+            }
             var claims = new List<Claim>
             {
                 new ("TenantId", user.TenantId.ToString()),

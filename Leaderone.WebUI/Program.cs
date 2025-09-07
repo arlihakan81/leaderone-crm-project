@@ -1,6 +1,7 @@
 using Leaderone.Application.Interfaces;
 using Leaderone.Application.Repositories;
 using Leaderone.Persistence.Context;
+using Leaderone.WebUI.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
-builder.Services.AddScoped(t => new HttpClient { BaseAddress = new Uri("https://localhost:7085/api") });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<JwtTokenHandler>();
+builder.Services.AddHttpClient("MyApiClient",
+    o =>
+    {
+        o.BaseAddress = new Uri("https://localhost:7085/api");
+    }).AddHttpMessageHandler<JwtTokenHandler>();
 builder.Services.AddDbContext<LeaderoneDbContext>();
 builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
 

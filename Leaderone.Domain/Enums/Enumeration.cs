@@ -32,6 +32,33 @@ namespace Leaderone.Domain.Enums
             Top
         }
 
+        public enum DeliveryType
+        {
+            FreeShipping,
+            LocalPickup,
+            StandardShipping,
+            ExpressShipping,
+            LocalDelivery,
+            CashOnDelivery
+        }
+
+        public enum OrderStatus
+        {
+            Cancelled,
+            Fulfilled,
+            ReadyToPickup,
+            Delayed,
+            PartialFulfilled,
+            Unfulfilled
+        }
+
+        public enum PaymentStatus
+        {
+            Pending,
+            Failed,
+            Cancelled,
+            Paid
+        }
 
     }
 }
